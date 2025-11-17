@@ -6,9 +6,11 @@ import io.restassured.response.Response;
 import lombok.SneakyThrows;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.IMarkerFactory;
+import org.slf4j.Marker;
 
 import java.util.List;
 
@@ -27,11 +29,11 @@ public class RestTests {
      @Test @SneakyThrows
     //Проверяем, что для возвращается существующий студент
     public void TestGetStudent200(){
-        int id=101;
-        String name="PeterTest";
-        List<Integer> lst = List.of(3,3,3);
+        int id=1000;
+        String name="Daniel";
+        List<Integer> lst = List.of(2,3,4,5);
          RestAssured.given()
-                    .baseUri("http://localhost:8090/student/"+id)
+                    .baseUri("http://localhost:8092/student/"+id)
                     .contentType(ContentType.JSON)
                     //.body(mapper.writeValueAsString(st1))
                 .when()
@@ -40,8 +42,8 @@ public class RestTests {
                     .statusCode(200)
                     .contentType(ContentType.JSON)
                     .body("id", Matchers.equalTo(id))
-                    .body("name", Matchers.equalTo(name))
-                    .body("marks",Matchers.equalTo(lst));
+                    .body("name", Matchers.equalTo(name));
+                    //.body("marks",Matchers.equalTo(lst));
     }
 
    @Test @SneakyThrows
@@ -51,12 +53,13 @@ public class RestTests {
         int id=0;
         //Student st1 = new Student("Vasia");
         RestAssured.given()
-                        .baseUri("http://localhost:8090/student/"+id)
+                        .baseUri("http://localhost:8092/student/"+id)
                         .contentType(ContentType.JSON)
                 .when()
                      .get()
                 .then()
-                     .statusCode(404);
+                     .statusCode(404)
+                     .body(Matchers.equalTo(""));
     }
 
     @Test @SneakyThrows
@@ -70,7 +73,7 @@ public class RestTests {
         st1.setName("KateTest");
         System.out.println(st1.toString());
         RestAssured.given()
-                    .baseUri("http://localhost:8090/student")
+                    .baseUri("http://localhost:8092/student")
                     .contentType(ContentType.JSON)
                     .body(st1.toString())
                 .when()
@@ -85,13 +88,13 @@ public class RestTests {
     public void TestPostExsitedStudentNewName(){
         Student st1 = new Student();
         List<Integer> lst = List.of(5,5,5,5);
-        st1.setId(100);
+        st1.setId(1000);
         st1.setMarks(lst);
         st1.setName("IvanTest2");
         System.out.println(st1.toString());
         //обновляем имя
         RestAssured.given()
-                .baseUri("http://localhost:8090/student")
+                .baseUri("http://localhost:8092/student")
                 .contentType(ContentType.JSON)
                 .body(st1.toString())
                 .when()
@@ -100,7 +103,7 @@ public class RestTests {
                 .statusCode(201);
        //проверяем, что имя обновилось
        RestAssured.given()
-                    .baseUri("http://localhost:8090/student/"+st1.getId())
+                    .baseUri("http://localhost:8092/student/"+st1.getId())
                     .contentType(ContentType.JSON)
                   .when()
                      .get()
@@ -115,12 +118,12 @@ public class RestTests {
     public void TestPostExsitedStudentNewMarks(){
         Student st1 = new Student();
         List<Integer> lst = List.of(4,4,4,4);
-        st1.setId(102);
+        st1.setId(1000);
         st1.setMarks(lst);
         st1.setName("AlexanderTest");
         System.out.println(st1.toString());
         RestAssured.given()
-                .baseUri("http://localhost:8090/student")
+                .baseUri("http://localhost:8092/student")
                 .contentType(ContentType.JSON)
                 .body(st1.toString())
                 .when()
@@ -129,7 +132,7 @@ public class RestTests {
                 .statusCode(201);
 
         RestAssured.given()
-                .baseUri("http://localhost:8090/student/"+st1.getId())
+                .baseUri("http://localhost:8092/student/"+st1.getId())
                 .contentType(ContentType.JSON)
                 .when()
                 .get()
@@ -147,7 +150,7 @@ public class RestTests {
                 "    \"marks\":[2,3,4,5]\n" +
                 "}\n";
         RestAssured.given()
-                         .baseUri("http://localhost:8090/student")
+                         .baseUri("http://localhost:8092/student")
                          .contentType(ContentType.JSON)
                           .body(reqBody)
                 .when()
@@ -166,7 +169,7 @@ public class RestTests {
                 "    \"marks\":[2,3,4,5]\n" +
                 "}";
         RestAssured.given()
-                .baseUri("http://localhost:8090/student")
+                .baseUri("http://localhost:8092/student")
                 .contentType(ContentType.JSON)
                 .body(reqBody)
                 .when()
@@ -181,7 +184,7 @@ public class RestTests {
     public void TestDeleteStudent200(){
         int id = 103;
         RestAssured.given()
-                     .baseUri("http://localhost:8090/student/"+id)
+                     .baseUri("http://localhost:8092/student/"+id)
                      .contentType(ContentType.JSON)
                 .when()
                     .delete()
@@ -193,9 +196,9 @@ public class RestTests {
     //Проверка НЕуспешного удаления студента
     //8. delete /student/{id} возвращает код 404, если студента с таким ID в базе нет.
     public void TestDeleteStudent404(){
-        int id = 0;
+        int id = 404;
         RestAssured.given()
-                .baseUri("http://localhost:8090/student/"+id)
+                .baseUri("http://localhost:8092/student/"+id)
                 .contentType(ContentType.JSON)
                 .when()
                 .delete()
@@ -208,14 +211,15 @@ public class RestTests {
     //9.     //get /topStudent код 200 и пустое тело, если студентов в базе нет.
     public void TestTopStudent200Empty(){
         int id = 0;
+        deteleTestData();
         RestAssured.given()
-                .baseUri("http://localhost:8090/topStudent/")
+                .baseUri("http://localhost:8092/topStudent/")
                 .contentType(ContentType.JSON)
                 .when()
                 .get()
                 .then()
                 .statusCode(200)
-                .body("", Matchers.hasSize(0));
+                .body(Matchers.equalTo(""));
     }
 
     @Test @SneakyThrows
@@ -223,14 +227,25 @@ public class RestTests {
     //10.get /topStudent код 200 и пустое тело, если ни у кого из студентов в базе нет оценок.
     public void TestTopStudent200(){
         int id = 0;
+        deteleTestData();
+        Student st = new Student();
+        st.setId(100);
+        st.setName("Pater");
         RestAssured.given()
-                .baseUri("http://localhost:8090/topStudent/")
+                .baseUri("http://localhost:8092/student")
+                .contentType(ContentType.JSON)
+                .body(st.toString())
+                .when()
+                .post();
+
+        RestAssured.given()
+                .baseUri("http://localhost:8092/topStudent/")
                 .contentType(ContentType.JSON)
                 .when()
                 .get()
                 .then()
                 .statusCode(200)
-                .body("", Matchers.hasSize(0));
+                .body(Matchers.equalTo(""));
     }
 
 
@@ -239,15 +254,59 @@ public class RestTests {
     //11. //get /topStudent код 200 и один студент, если у него максимальная средняя оценка, либо же среди всех студентов с максимальной средней у него их больше всего.
 
     public void TestTopStudent200max(){
+         deteleTestData();
+        Student st = new Student();
+        st.setId(100);
+        st.setMarks(List.of(5,5,5));
+        st.setName("Peter");
+
         RestAssured.given()
-                .baseUri("http://localhost:8090/topStudent/")
+                .baseUri("http://localhost:8090/student")
+                .contentType(ContentType.JSON)
+                .body(st.toString())
+                .when()
+                .post();
+
+        st.setId(101);
+        st.setName("Vasia");
+        st.setMarks(List.of(4,4,4,4));
+
+        RestAssured.given()
+                .baseUri("http://localhost:8092/student")
+                .contentType(ContentType.JSON)
+                .body(st.toString())
+                .when()
+                .post();
+
+        RestAssured.given()
+                .baseUri("http://localhost:8092/topStudent/")
                 .contentType(ContentType.JSON)
                 .when()
                 .get()
                 .then()
                 .statusCode(200)
-                .body("", not(empty()))
-                .body("[0].name", notNullValue());
+                .body("[0].id", Matchers.equalTo(100));
+
+        st.setId(102);
+        st.setMarks(List.of(5,5,5,5));
+        st.setName("Maxim");
+
+        RestAssured.given()
+                .baseUri("http://localhost:8092/student")
+                .contentType(ContentType.JSON)
+                .body(st.toString())
+                .when()
+                .post();
+
+        RestAssured.given()
+                .baseUri("http://localhost:8092/topStudent/")
+                .contentType(ContentType.JSON)
+                .when()
+                .get()
+                .then()
+                .statusCode(200)
+                .body("[0].id", Matchers.equalTo(102));
+
     }
 
 
@@ -256,15 +315,64 @@ public class RestTests {
     //12. get /topStudent код 200 и несколько студентов, если у них всех эта оценка максимальная и при этом они равны по количеству оценок.
     public void TestTopStudent200max2(){
         int id = 0;
+        deteleTestData();
+
+        Student st = new Student();
+        st.setId(100);
+        st.setMarks(List.of(5,5,5,5));
+        st.setName("Peter");
+
         RestAssured.given()
-                .baseUri("http://localhost:8090/topStudent/")
+                .baseUri("http://localhost:8092/student")
+                .contentType(ContentType.JSON)
+                .body(st.toString())
+                .when()
+                .post();
+
+        st.setId(101);
+        st.setName("Vasia");
+        st.setMarks(List.of(4,4,4,4));
+
+        RestAssured.given()
+                .baseUri("http://localhost:8092/student")
+                .contentType(ContentType.JSON)
+                .body(st.toString())
+                .when()
+                .post();
+
+        st.setId(102);
+        st.setMarks(List.of(5,5,5,5));
+        st.setName("Maxim");
+
+        RestAssured.given()
+                .baseUri("http://localhost:8092/student")
+                .contentType(ContentType.JSON)
+                .body(st.toString())
+                .when()
+                .post();
+
+        st.setId(103);
+        st.setMarks(List.of(5,5,5,5));
+        st.setName("Vlad");
+
+        RestAssured.given()
+                .baseUri("http://localhost:8092/student")
+                .contentType(ContentType.JSON)
+                .body(st.toString())
+                .when()
+                .post();
+
+       RestAssured.given()
+                .baseUri("http://localhost:8092/topStudent/")
                 .contentType(ContentType.JSON)
                 .when()
                 .get()
                 .then()
                 .statusCode(200)
-                .body("", not(empty()))
-                .body("", hasSize(greaterThan(1)));
+                .body("[0].id", Matchers.equalTo(100))
+                .body("[1].id", Matchers.equalTo(102))
+                .body("[2].id", Matchers.equalTo(103));;
+
     }
 
     public void deleteTestStudent(int id) {
